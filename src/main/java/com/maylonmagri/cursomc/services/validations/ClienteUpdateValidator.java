@@ -2,42 +2,43 @@ package com.maylonmagri.cursomc.services.validations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.HandlerMapping;
 
 import com.maylonmagri.cursomc.domain.Cliente;
-import com.maylonmagri.cursomc.domain.enums.TipoCliente;
-import com.maylonmagri.cursomc.dto.ClienteNewDTO;
+import com.maylonmagri.cursomc.dto.ClienteDTO;
 import com.maylonmagri.cursomc.repositories.ClienteRepository;
 import com.maylonmagri.cursomc.resources.exceptions.FieldMessage;
-import com.maylonmagri.cursomc.services.validations.utils.BR;
 
-public class ClienteInsertValidator implements ConstraintValidator<ClienteInsert, ClienteNewDTO> {
+public class ClienteUpdateValidator implements ConstraintValidator<ClienteUpdate, ClienteDTO> {
+	
+	@Autowired
+	private HttpServletRequest request;
 	
 	@Autowired
 	private ClienteRepository repo;
 	
 	@Override
-	public void initialize(ClienteInsert ann) {
+	public void initialize(ClienteUpdate ann) {
 	}
 
 	@Override
-	public boolean isValid(ClienteNewDTO objDto, ConstraintValidatorContext context) {
-		List<FieldMessage> list = new ArrayList<>();
-
-		if (objDto.getTipo().equals(TipoCliente.PESSOAFISICA.getCod()) && !BR.isValidCPF(objDto.getCpfOuCnpj())) {
-			list.add(new FieldMessage("cpfOuCnpj", "CPF inválido"));
-		}
+	public boolean isValid(ClienteDTO objDto, ConstraintValidatorContext context) {
 		
-		if (objDto.getTipo().equals(TipoCliente.PESSOAJURIDICA.getCod()) && !BR.isValidCNPJ(objDto.getCpfOuCnpj())) {
-			list.add(new FieldMessage("cpfOuCnpj", "CNPJ inválido"));
-		}
+		@SuppressWarnings("unchecked")
+		Map<String, String> map = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+		Integer uriId = Integer.parseInt(map.get("id"));
+		
+		List<FieldMessage> list = new ArrayList<>();
 		
 		Cliente aux = repo.findByEmail(objDto.getEmail());
-		if (aux != null) {
+		if (aux != null && !aux.getId().equals(uriId)) {
 			list.add(new FieldMessage("email", "Email já existente"));
 		}
 
